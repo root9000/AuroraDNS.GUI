@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Media.Effects;
 
 namespace AuroraGUI
 {
@@ -18,6 +20,7 @@ namespace AuroraGUI
             VerText.Text += $" ({fileTime.Year - 2000}{fileTime.Month:00}{fileTime.Day:00}";
             VerText.Text += IsDebugBuild(GetType().Assembly) ? ".Nightly)" : ".Releases)";
             if (IsDebugBuild(GetType().Assembly)) IsNightly.Visibility = Visibility.Visible;
+            IsNightly.Effect = new BlurEffect { Radius = 2, RenderingBias = RenderingBias.Performance };
         }
 
         private void ButtonCredits_OnClick(object sender, RoutedEventArgs e)
@@ -35,16 +38,8 @@ namespace AuroraGUI
 
         private static bool IsDebugBuild(Assembly assembly)
         {
-            foreach (object attribute in assembly.GetCustomAttributes(false))
-            {
-                if (attribute is DebuggableAttribute)
-                {
-                    DebuggableAttribute _attribute = attribute as DebuggableAttribute;
-
-                    return _attribute.IsJITTrackingEnabled;
-                }
-            }
-            return false;
+            return assembly.GetCustomAttributes(false).OfType<DebuggableAttribute>().Select(attribute => attribute)
+                .Select(attribute => attribute.IsJITTrackingEnabled).FirstOrDefault();
         }
     }
 }

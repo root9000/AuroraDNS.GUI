@@ -12,21 +12,22 @@
         Title="关于" Height="350" Width="600" WindowStartupLocation="CenterScreen"
         MinWidth="550" MinHeight="370" ResizeMode="NoResize">
     <Grid>
-        <Image Name="IsNightly" Visibility="Hidden" Source="../Resources/nightly.png" Margin="460,10,10,290"/>
-        <Grid HorizontalAlignment="Center" Height="130" VerticalAlignment="Top" Width="600" Opacity="0.8">
+        <Grid HorizontalAlignment="Center" Height="130" VerticalAlignment="Top" Width="600">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="119*"/>
                 <ColumnDefinition Width="31*"/>
             </Grid.ColumnDefinitions>
             <Grid.Background>
-                <ImageBrush ImageSource="../Resources/lig.png" TileMode="FlipXY" Stretch="UniformToFill" />
+                <ImageBrush ImageSource="../Resources/sha.png" TileMode="FlipXY" Stretch="UniformToFill" />
             </Grid.Background>
             <Grid.Effect>
                 <DropShadowEffect Color="DarkGray"  ShadowDepth="1" Opacity="0.7" />
             </Grid.Effect>
         </Grid>
 
-        <TextBlock Text="Photo by Milkey" Margin="20,20,0,0" 
+        <Image x:Name="IsNightly" Visibility="Hidden" Source="../Resources/nightly.png" Opacity="0.5" Margin="460,10,10,290"/>
+
+        <TextBlock Text="Photo by Yufeng Zhao" Margin="20,20,0,0" 
                VerticalAlignment="Top" Foreground="#FFF"  FontSize="10" Opacity="0.9"
                HorizontalAlignment="Left" TextAlignment="Left" Height="17"/>
 
@@ -44,7 +45,7 @@
 
                 <Image Grid.Row="0" Margin="16 16 16 4" Height="50" Width="50" HorizontalAlignment="Left" Source="../Aurora.png"/>
                 <TextBlock Grid.Row="0" Margin="70,26,365,16" VerticalAlignment="Center"
-                           Style="{StaticResource MaterialDesignHeadlineTextBlock}" FontFamily="Roboto"><Italic>A</Italic>uroraDNS</TextBlock>
+                           Style="{StaticResource MaterialDesignHeadlineTextBlock}" FontFamily="Roboto"><Italic><Run Text="A"/></Italic><Run Text="uroraDNS"/></TextBlock>
                 <Separator Grid.Row="1" Style="{StaticResource MaterialDesignSeparator}" />
                 <TextBlock Grid.Row="2" Margin="16 0 16 8" Foreground="#575757"
                            VerticalAlignment="Center" HorizontalAlignment="Left" 
@@ -72,7 +73,7 @@
                 <TextBlock Grid.Row="0" Margin="16,16,0,5.4" 
                            VerticalAlignment="Center" HorizontalAlignment="Left"
                            Style="{StaticResource MaterialDesignBody2TextBlock}"
-                           Foreground="#FF757575" ><Run Text="© 2018-2019 AuroraDNS Proj 保留所有权利 / 使用 MIT 许可证开放源代码。"/></TextBlock>
+                           Foreground="#FF757575" ><Run Text="© 2018-2020 AuroraDNS Proj 保留所有权利 / 使用 MIT 许可证开放源代码。"/></TextBlock>
                 <Separator Grid.Row="1" Style="{StaticResource MaterialDesignSeparator}"/>
                 <TextBlock Grid.Row="2" Margin="16,7.6,0,15.4" 
                            VerticalAlignment="Center" HorizontalAlignment="Left" 
@@ -87,9 +88,7 @@
             </Grid>
         </materialDesign:Card>
         <TextBlock Margin="0,302,5.6,0" 
-            VerticalAlignment="Top" Foreground="#CCC" Width="588" HorizontalAlignment="Center" TextAlignment="Center" Height="20">
-            Made With ❤ By Milkey Tan. | <Hyperlink Click="HyperlinkSponsor_OnClick" NavigateUri="https://afdian.net/@AuroraDNS">支持我</Hyperlink>
-        </TextBlock>
+            VerticalAlignment="Top" Foreground="#CCC" Width="588" HorizontalAlignment="Center" TextAlignment="Center" Height="20"><Run Text="Made With ❤ By Milkey Tan. | "/><Hyperlink Click="HyperlinkSponsor_OnClick" NavigateUri="https://afdian.net/@AuroraDNS"><Run Text="支持我"/></Hyperlink></TextBlock>
 
     </Grid>
 </Window>

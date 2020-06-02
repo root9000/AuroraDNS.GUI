@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
 using System.Windows;
 using ARSoft.Tools.Net;
 using ARSoft.Tools.Net.Dns;
@@ -12,22 +11,17 @@ namespace AuroraGUI.Tools
 {
     static class IpTools
     {
-        public static bool IsIp(string ip)
-        {
-            return Regex.IsMatch(ip, @"^((2[0-4]\d|25[0-5]|[01]?\d\d?)\.){3}(2[0-4]\d|25[0-5]|[01]?\d\d?)$");
-        }
+        public static bool IsIp(string ip) => IPAddress.TryParse(ip,out _);
 
-        public static bool InSameLaNet(IPAddress ipA, IPAddress ipB)
-        {
-            return ipA.GetHashCode() % 65536L == ipB.GetHashCode() % 65536L;
-        }
+        public static bool InSameLaNet(IPAddress ipA, IPAddress ipB) =>
+            ipA.GetHashCode() % 65536L == ipB.GetHashCode() % 65536L;
 
         public static string GetLocIp()
         {
+            var tcpClient = new TcpClient { ReceiveTimeout = 2500, SendTimeout = 2500 };
             var addressUri = new Uri(DnsSettings.HttpsDnsUrl);
             try
             {
-                TcpClient tcpClient = new TcpClient();
                 tcpClient.Connect(addressUri.DnsSafeHost, addressUri.Port);
                 return ((IPEndPoint) tcpClient.Client.LocalEndPoint).Address.ToString();
             }
@@ -36,17 +30,42 @@ namespace AuroraGUI.Tools
                 MyTools.BackgroundLog("Try Connect:" + e);
                 try
                 {
-                    TcpClient tcpClient = new TcpClient();
-                    tcpClient.Connect(ResolveNameIpAddress(addressUri.DnsSafeHost), addressUri.Port);
-                    return ((IPEndPoint)tcpClient.Client.LocalEndPoint).Address.ToString();
+                    try
+                    {
+                        tcpClient.Connect(ResolveNameIpAddress(addressUri.DnsSafeHost), addressUri.Port);
+                        return ((IPEndPoint)tcpClient.Client.LocalEndPoint).Address.ToString();
+                    }
+                    catch
+                    {
+                        addressUri = new Uri(DnsSettings.SecondHttpsDnsUrl);
+                        tcpClient.Connect(ResolveNameIpAddress(addressUri.DnsSafeHost), addressUri.Port);
+                        return ((IPEndPoint)tcpClient.Client.LocalEndPoint).Address.ToString();
+                    }
                 }
-                catch (Exception exception)
+                catch
                 {
                     return MessageBox.Show(
-                               $"Error: 尝试连接远端 DNS over HTTPS 服务器发生错误(DoH-Server){Environment.NewLine}点击“确定”以重试连接,点击“取消”放弃连接使用预设地址。{Environment.NewLine}Original error: "
-                               + exception.Message, @"错误", MessageBoxButton.OKCancel) == MessageBoxResult.OK
-                        ? GetLocIp() : "192.168.0.1";
+                        $"Error: 尝试连接远端 DNS over HTTPS 服务器发生错误{Environment.NewLine}点击“确定”以重试连接,点击“取消”放弃连接使用备用 DNS 服务器测试。" +
+                        $"{Environment.NewLine}Original error: " + e.Message, @"错误", MessageBoxButton.OKCancel) == MessageBoxResult.OK
+                        ? GetLocIp() : GetLocIpUdp();
                 }
+            }
+        }
+
+        public static string GetLocIpUdp()
+        {
+            try
+            {
+                var udpClient = new UdpClient();
+                udpClient.Connect(DnsSettings.SecondDnsIp, 53);
+                return ((IPEndPoint)udpClient.Client.LocalEndPoint).Address.ToString();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(
+                    $"Error: 尝试连接远端备用 DNS 服务器失败，请检查您的设置与互联网连接。" +
+                    $"{Environment.NewLine}Original error: " + e.Message, @"错误");
+                return "192.168.1.1";
             }
         }
 
@@ -88,13 +107,39 @@ namespace AuroraGUI.Tools
                         ipMsg = new DnsClient(DnsSettings.SecondDnsIp, 5000).Resolve(DomainName.Parse(name))
                             .AnswerRecords[0];
 
-                    if (ipMsg.RecordType == RecordType.A && ipMsg is ARecord msg1)
-                        return msg1.Address;
-                    if (ipMsg.RecordType == RecordType.CName)
-                        if (ipMsg is CNameRecord msg) name = msg.CanonicalName.ToString();
+                    switch (ipMsg.RecordType)
+                    {
+                        case RecordType.A when ipMsg is ARecord msg1:
+                            return msg1.Address;
+                        case RecordType.CName:
+                        {
+                            if (ipMsg is CNameRecord msg) name = msg.CanonicalName.ToString();
+                            break;
+                        }
+                    }
                 }
                 catch (Exception e)
                 {
+                    try
+                    {
+                        var ipMsg = QueryResolve.ResolveOverHttpsByDnsJson(IPAddress.Any.ToString(),
+                            name, "https://1.0.0.1/dns-query", DnsSettings.ProxyEnable, DnsSettings.WProxy).list[0];
+                        switch (ipMsg.RecordType)
+                        {
+                            case RecordType.A when ipMsg is ARecord msg1:
+                                return msg1.Address;
+                            case RecordType.CName:
+                            {
+                                if (ipMsg is CNameRecord msg) name = msg.CanonicalName.ToString();
+                                break;
+                            }
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        MyTools.BackgroundLog(exception.ToString());
+                        return IPAddress.Any;
+                    }
                     MyTools.BackgroundLog(e.ToString());
                 }
             }
